@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Energy Forecasting Demo</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pv5HBZ4GxtB2NZRk98cFQhY1r+MEZCkT+NHUlm4/s7EQo1gC9cQyv1HdVluukHWl7PzMuMbGDeP2/cJMh6y0gQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    #energyApp {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .auth-box {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+    }
+    .auth-box h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+    .auth-box input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .auth-box button {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #1d2a35;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .auth-box button:hover {
+      background-color: #0f1b24;
+    }
+    nav ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    nav ul li a {
+      text-decoration: none;
+      background-color: #e74c3c;
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+    }
+    nav ul li a.active {
+      background-color: #1d2a35;
+    }
+    .form-section {
+      margin-top: 1rem;
+    }
+    .form-section label {
+      display: block;
+      margin-top: 0.5rem;
+    }
+    .form-section input[type="number"] {
+      width: 150px;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+    .form-section .appliances {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .form-section .appliances label {
+      margin-right: 0.5rem;
+    }
+    .form-section button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #1d2a35;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .form-section button:hover {
+      background-color: #0f1b24;
+    }
+    .suggestions {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="energyApp"></div>
+  <script>
+    // Data storage for energy app
+    let euUsers = JSON.parse(localStorage.getItem('euUsers')) || [];
+    let euCurrentUser = JSON.parse(localStorage.getItem('euCurrentUser')) || null;
+    let euEntries = JSON.parse(localStorage.getItem('euEntries')) || [];
+    function euPersist() {
+      localStorage.setItem('euUsers', JSON.stringify(euUsers));
+      localStorage.setItem('euEntries', JSON.stringify(euEntries));
+      if (euCurrentUser) {
+        localStorage.setItem('euCurrentUser', JSON.stringify(euCurrentUser));
+      } else {
+        localStorage.removeItem('euCurrentUser');
+      }
+    }
+    function hash(pwd) { return btoa(pwd); }
+    function renderAuth() {
+      const root = document.getElementById('energyApp');
+      root.innerHTML = '';
+      const box = document.createElement('div');
+      box.className = 'auth-box';
+      box.innerHTML = `
+        <h2>Energy App Login</h2>
+        <input id="euUser" placeholder="Username" />
+        <input id="euPwd" type="password" placeholder="Password" />
+        <button id="euLogin">Log In</button>
+        <p style="margin-top:1rem; text-align:center;">New here? <a href="#" id="euRegLink">Register</a></p>
+      `;
+      root.appendChild(box);
+      document.getElementById('euLogin').addEventListener('click', () => {
+        const u = document.getElementById('euUser').value.trim();
+        const p = document.getElementById('euPwd').value;
+        const user = euUsers.find(v => v.username === u && v.password === hash(p));
+        if (user) {
+          euCurrentUser = user;
+          euPersist();
+          renderEnergyApp('dashboard');
+        } else {
+          alert('Invalid credentials');
+        }
+      });
+      document.getElementById('euRegLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderRegister();
+      });
+    }
+    function renderRegister() {
+      const root = document.getElementById('energyApp');
+      root.innerHTML = '';
+      const box = document.createElement('div');
+      box.className = 'auth-box';
+      box.innerHTML = `
+        <h2>Register</h2>
+        <input id="euRegUser" placeholder="Username" />
+        <input id="euRegPwd" type="password" placeholder="Password" />
+        <button id="euRegBtn">Create Account</button>
+        <p style="margin-top:1rem; text-align:center;">Have an account? <a href="#" id="euLoginLink">Log In</a></p>
+      `;
+      root.appendChild(box);
+      document.getElementById('euRegBtn').addEventListener('click', () => {
+        const u = document.getElementById('euRegUser').value.trim();
+        const p = document.getElementById('euRegPwd').value;
+        if (euUsers.find(v => v.username === u)) { alert('Username exists'); return; }
+        const newUser = { username: u, password: hash(p) };
+        euUsers.push(newUser);
+        euCurrentUser = newUser;
+        euPersist();
+        renderEnergyApp('dashboard');
+      });
+      document.getElementById('euLoginLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderAuth();
+      });
+    }
+    function renderEnergyApp(page) {
+      const root = document.getElementById('energyApp');
+      root.innerHTML = '';
+      // nav
+      const nav = document.createElement('nav');
+      nav.innerHTML = `
+        <ul>
+          <li><a href="#" data-page="dashboard" class="${page === 'dashboard' ? 'active' : ''}">Dashboard</a></li>
+          <li><a href="#" data-page="planner" class="${page === 'planner' ? 'active' : ''}">Energy Planner</a></li>
+          <li><a href="../index.html#contact" target="_blank">Contact</a></li>
+          <li><a href="#" id="euLogout">Logout</a></li>
+        </ul>
+      `;
+      root.appendChild(nav);
+      nav.querySelectorAll('a[data-page]').forEach(a => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const dest = a.getAttribute('data-page');
+          renderEnergyApp(dest);
+        });
+      });
+      nav.querySelector('#euLogout').addEventListener('click', (e) => {
+        e.preventDefault();
+        euCurrentUser = null;
+        euPersist();
+        renderAuth();
+      });
+      // content
+      let section;
+      if (page === 'dashboard') {
+        section = document.createElement('section');
+        section.innerHTML = `<h2>Dashboard</h2>`;
+        // compute metrics
+        const numUsers = euUsers.length;
+        // sectors and industries from entries: we can random for demo
+        const sectors = ['Residential', 'Commercial', 'Industrial'];
+        const sectorCounts = sectors.map(s => euEntries.filter(e => e.sector === s).length);
+        const industries = ['Manufacturing', 'Technology', 'Healthcare'];
+        const industryCounts = industries.map(i => euEntries.filter(e => e.industry === i).length);
+        const metrics = document.createElement('ul');
+        metrics.innerHTML = `
+          <li><strong>Users:</strong> ${numUsers}</li>
+          <li><strong>Residential entries:</strong> ${sectorCounts[0]}</li>
+          <li><strong>Commercial entries:</strong> ${sectorCounts[1]}</li>
+          <li><strong>Industrial entries:</strong> ${sectorCounts[2]}</li>
+        `;
+        section.appendChild(metrics);
+        // Chart showing consumption history for current user
+        const userEntries = euEntries.filter(e => e.username === euCurrentUser.username);
+        if (userEntries.length > 0) {
+          const canvas = document.createElement('canvas');
+          canvas.height = 250;
+          section.appendChild(canvas);
+          const labels = userEntries.map((e, i) => `Entry ${i + 1}`);
+          const data = userEntries.map(e => e.consumption);
+          new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Monthly Consumption (kWh)',
+                data: data,
+                backgroundColor: 'rgba(231, 76, 60, 0.6)',
+                borderColor: '#e74c3c'
+              }]
+            },
+            options: {
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true } }
+            }
+          });
+        } else {
+          const p = document.createElement('p');
+          p.textContent = 'No consumption data yet. Visit the Energy Planner to add your first entry.';
+          section.appendChild(p);
+        }
+      } else if (page === 'planner') {
+        section = document.createElement('section');
+        section.innerHTML = '<h2>Energy Planner</h2>';
+        // Form
+        const formDiv = document.createElement('div');
+        formDiv.className = 'form-section';
+        formDiv.innerHTML = `
+          <label for="euConsumption">Monthly Consumption (kWh):</label>
+          <input type="number" id="euConsumption" min="0" step="10" />
+          <label>Sector:</label>
+          <select id="euSector">
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Industrial">Industrial</option>
+          </select>
+          <label>Industry:</label>
+          <select id="euIndustry">
+            <option value="Manufacturing">Manufacturing</option>
+            <option value="Technology">Technology</option>
+            <option value="Healthcare">Healthcare</option>
+          </select>
+          <label>Appliances:</label>
+          <div class="appliances">
+            <label><input type="checkbox" value="AC" /> Air Conditioner</label>
+            <label><input type="checkbox" value="Heater" /> Heater</label>
+            <label><input type="checkbox" value="Refrigerator" /> Refrigerator</label>
+            <label><input type="checkbox" value="Washing Machine" /> Washing Machine</label>
+            <label><input type="checkbox" value="TV" /> TV</label>
+          </div>
+          <button id="euSubmit">Submit</button>
+        `;
+        section.appendChild(formDiv);
+        const suggestionsDiv = document.createElement('div');
+        suggestionsDiv.className = 'suggestions';
+        section.appendChild(suggestionsDiv);
+        formDiv.querySelector('#euSubmit').addEventListener('click', () => {
+          const cons = parseFloat(formDiv.querySelector('#euConsumption').value);
+          if (isNaN(cons) || cons <= 0) { alert('Please enter consumption'); return; }
+          const sector = formDiv.querySelector('#euSector').value;
+          const industry = formDiv.querySelector('#euIndustry').value;
+          const applianceInputs = formDiv.querySelectorAll('.appliances input[type="checkbox"]');
+          const selectedAppliances = Array.from(applianceInputs).filter(chk => chk.checked).map(chk => chk.value);
+          euEntries.push({ username: euCurrentUser.username, consumption: cons, sector, industry, appliances: selectedAppliances });
+          euPersist();
+          // Compute suggestions
+          const suggestions = [];
+          if (cons > 500) suggestions.push('Consider installing solar panels or switching to renewable energy.');
+          if (cons > 300 && cons <= 500) suggestions.push('Upgrade to energy‑efficient appliances and LED lighting.');
+          if (cons <= 300) suggestions.push('Great job! Keep monitoring your usage to maintain efficiency.');
+          if (selectedAppliances.includes('AC')) suggestions.push('Set your air conditioner to 24°C and schedule regular maintenance.');
+          if (selectedAppliances.includes('Heater')) suggestions.push('Insulate your home to reduce heating needs during winter.');
+          if (selectedAppliances.includes('Refrigerator')) suggestions.push('Ensure your refrigerator seals are tight and keep it well stocked to maintain efficiency.');
+          if (selectedAppliances.includes('Washing Machine')) suggestions.push('Wash with cold water and full loads to save electricity.');
+          if (selectedAppliances.includes('TV')) suggestions.push('Turn off the television completely instead of using standby mode.');
+          suggestionsDiv.innerHTML = '<h3>Energy Saving Tips</h3><ul>' + suggestions.map(s => `<li>${s}</li>`).join('') + '</ul>';
+          formDiv.querySelector('#euConsumption').value = '';
+          applianceInputs.forEach(chk => chk.checked = false);
+        });
+      }
+      root.appendChild(section);
+    }
+    // initialise
+    if (euCurrentUser) {
+      renderEnergyApp('dashboard');
+    } else {
+      renderAuth();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knapsack Optimizer Demo</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background-color: #f8f9fa;
+    }
+    .selected {
+      background-color: #eaf2f8;
+    }
+    .result {
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+    .controls {
+      margin-bottom: 1rem;
+    }
+    .controls input {
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+      width: 80px;
+    }
+    .controls button {
+      padding: 0.5rem 1rem;
+      background-color: #1d2a35;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background-color: #0f1b24;
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <h2>Knapsack Optimizer Demo</h2>
+      <p>Select a maximum weight capacity and see which items deliver the highest total value.  This illustrates how optimisation algorithms can drive intelligent business decisions about resource allocation.</p>
+      <div class="controls">
+        <label for="capacity">Capacity: </label>
+        <input type="number" id="capacity" min="1" value="10" />
+        <button id="solveBtn">Compute</button>
+      </div>
+      <table id="itemsTable">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Weight</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Items will be populated by JavaScript -->
+        </tbody>
+      </table>
+      <div class="result" id="result"></div>
+    </div>
+  </section>
+  <script>
+    // Sample items list
+    const items = [
+      { name: 'Item A', weight: 2, value: 6 },
+      { name: 'Item B', weight: 3, value: 5 },
+      { name: 'Item C', weight: 5, value: 8 },
+      { name: 'Item D', weight: 4, value: 6 },
+      { name: 'Item E', weight: 6, value: 9 }
+    ];
+    // Populate the table with items
+    const tbody = document.querySelector('#itemsTable tbody');
+    items.forEach((item, idx) => {
+      const row = document.createElement('tr');
+      row.setAttribute('data-index', idx);
+      row.innerHTML = `<td>${item.name}</td><td>${item.weight}</td><td>${item.value}</td>`;
+      tbody.appendChild(row);
+    });
+    function solveKnapsack(capacity) {
+      const n = items.length;
+      // dp[i][w] will hold the maximum value achievable with the first i items and capacity w
+      const dp = Array.from({ length: n + 1 }, () => Array(capacity + 1).fill(0));
+      // track selections
+      for (let i = 1; i <= n; i++) {
+        const { weight, value } = items[i - 1];
+        for (let w = 0; w <= capacity; w++) {
+          if (weight <= w) {
+            dp[i][w] = Math.max(dp[i - 1][w], dp[i - 1][w - weight] + value);
+          } else {
+            dp[i][w] = dp[i - 1][w];
+          }
+        }
+      }
+      // reconstruct selected items
+      let w = capacity;
+      const selected = [];
+      for (let i = n; i > 0; i--) {
+        if (dp[i][w] !== dp[i - 1][w]) {
+          selected.push(i - 1);
+          w -= items[i - 1].weight;
+        }
+      }
+      return { maxValue: dp[n][capacity], selected: selected };
+    }
+    function updateSelection(selectedIndices) {
+      // clear previous highlight
+      tbody.querySelectorAll('tr').forEach((row) => {
+        row.classList.remove('selected');
+      });
+      // highlight selected rows
+      selectedIndices.forEach((idx) => {
+        const row = tbody.querySelector(`tr[data-index="${idx}"]`);
+        if (row) row.classList.add('selected');
+      });
+    }
+    document.getElementById('solveBtn').addEventListener('click', () => {
+      const capacity = parseInt(document.getElementById('capacity').value, 10);
+      if (isNaN(capacity) || capacity <= 0) {
+        document.getElementById('result').textContent = 'Please enter a positive capacity.';
+        return;
+      }
+      const result = solveKnapsack(capacity);
+      updateSelection(result.selected);
+      document.getElementById('result').textContent = `Maximum value achievable: ${result.maxValue}`;
+    });
+  </script>
+  <footer>
+    &copy; 2025 Eagle Group of IT Solution. All rights reserved.
+  </footer>
+</body>
+</html>

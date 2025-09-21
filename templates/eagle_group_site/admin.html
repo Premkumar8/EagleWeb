@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Enquiries</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pv5HBZ4GxtB2NZRk98cFQhY1r+MEZCkT+NHUlm4/s7EQo1gC9cQyv1HdVluukHWl7PzMuMbGDeP2/cJMh6y0gQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    #adminApp {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .login-box {
+      max-width: 400px;
+      margin: 5rem auto;
+      padding: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+    }
+    .login-box h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .login-box button {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #1d2a35;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .login-box button:hover { background-color: #0f1b24; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th { background-color: #f8f9fa; }
+    .actions button {
+      background: none;
+      border: none;
+      color: #1d2a35;
+      cursor: pointer;
+    }
+    .actions button:hover { color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <!-- Navbar for admin page -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <img src="assets/logo.png" alt="Logo" class="logo-img" />
+        <span>Eagle Group IT Solutions</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#" id="logoutAdmin" style="display:none;">Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div id="adminApp"></div>
+  <script>
+    let adminLoggedIn = false;
+    function renderLogin() {
+      const app = document.getElementById('adminApp');
+      app.innerHTML = '';
+      const box = document.createElement('div');
+      box.className = 'login-box';
+      box.innerHTML = `
+        <h2>Admin Login</h2>
+        <input id="adminUser" placeholder="Username" />
+        <input id="adminPwd" type="password" placeholder="Password" />
+        <button id="adminLoginBtn">Log In</button>
+      `;
+      app.appendChild(box);
+      document.getElementById('adminLoginBtn').addEventListener('click', () => {
+        const u = document.getElementById('adminUser').value.trim();
+        const p = document.getElementById('adminPwd').value;
+        // Very simple check: username and password must not be empty
+        if (u && p) {
+          adminLoggedIn = true;
+          document.getElementById('logoutAdmin').style.display = '';
+          renderAdmin();
+        } else {
+          alert('Please enter username and password');
+        }
+      });
+    }
+    function renderAdmin() {
+      const app = document.getElementById('adminApp');
+      app.innerHTML = '';
+      // Table of enquiries
+      const enquiries = JSON.parse(localStorage.getItem('enquiries') || '[]');
+      const section = document.createElement('section');
+      section.innerHTML = '<h2>Enquiries</h2>';
+      if (enquiries.length === 0) {
+        section.innerHTML += '<p>No enquiries received yet.</p>';
+      } else {
+        const table = document.createElement('table');
+        table.innerHTML = `
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Message</th><th>Source</th><th>Date</th><th>Actions</th></tr>
+          </thead>
+          <tbody></tbody>
+        `;
+        const tbody = table.querySelector('tbody');
+        enquiries.forEach((q, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${q.name}</td>
+            <td>${q.email}</td>
+            <td>${q.message}</td>
+            <td>${q.source}</td>
+            <td>${q.date}</td>
+            <td class="actions"><button onclick="deleteEnquiry(${index})" title="Delete"><i class="fas fa-trash-alt"></i></button></td>
+          `;
+          tbody.appendChild(row);
+        });
+        section.appendChild(table);
+      }
+      app.appendChild(section);
+    }
+    window.deleteEnquiry = function(index) {
+      if (confirm('Delete this enquiry?')) {
+        const enquiries = JSON.parse(localStorage.getItem('enquiries') || '[]');
+        enquiries.splice(index, 1);
+        localStorage.setItem('enquiries', JSON.stringify(enquiries));
+        renderAdmin();
+      }
+    };
+    document.getElementById('logoutAdmin').addEventListener('click', (e) => {
+      e.preventDefault();
+      adminLoggedIn = false;
+      document.getElementById('logoutAdmin').style.display = 'none';
+      renderLogin();
+    });
+    // Initialize page
+    if (adminLoggedIn) {
+      renderAdmin();
+    } else {
+      renderLogin();
+    }
+  </script>
+</body>
+</html>

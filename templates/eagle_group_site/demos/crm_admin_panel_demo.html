@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced CRM Admin Panel Demo</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pv5HBZ4GxtB2NZRk98cFQhY1r+MEZCkT+NHUlm4/s7EQo1gC9cQyv1HdVluukHWl7PzMuMbGDeP2/cJMh6y0gQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    /* Layout inspired by modern admin themes */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 220px;
+      background-color: #f8f9fa;
+      border-right: 1px solid #e0e0e0;
+      padding-top: 1rem;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      margin: 0;
+    }
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      color: #1d2a35;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .sidebar a.active {
+      background-color: #e6f3ff;
+      border-left: 4px solid #1d79c2;
+      color: #1d79c2;
+    }
+    .sidebar a:hover {
+      background-color: #f1f7fe;
+      color: #1d79c2;
+    }
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background-color: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 1rem;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #1d2a35;
+    }
+    .page-content {
+      padding: 1rem 2rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+    /* Card grid for dashboard metrics */
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .metric-card {
+      flex: 1 1 200px;
+      background-color: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .metric-card i {
+      font-size: 1.5rem;
+      color: #1d79c2;
+    }
+    .metric-card .metric-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .metric-card .metric-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1d2a35;
+    }
+    .metric-card .metric-label {
+      font-size: 0.85rem;
+      color: #555;
+    }
+    /* Table and form styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.6rem;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .actions button {
+      background: none;
+      border: none;
+      color: #1d79c2;
+      cursor: pointer;
+      margin-right: 0.5rem;
+      font-size: 1rem;
+    }
+    .actions button:hover {
+      color: #e74c3c;
+    }
+    .form-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .form-inline input, .form-inline select {
+      padding: 0.5rem;
+      flex: 1 1 180px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .form-inline button {
+      padding: 0.5rem 1rem;
+      background-color: #1d79c2;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .form-inline button:hover {
+      background-color: #155a8a;
+    }
+    .report-btn {
+      margin-top: 1rem;
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #1d79c2;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+    .report-btn:hover {
+      background-color: #155a8a;
+    }
+
+    /* Login/register panel */
+    .auth-container {
+      max-width: 400px;
+      margin: 5rem auto;
+      padding: 2rem;
+      background-color: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .auth-container h2 {
+      text-align: center;
+      margin-top: 0;
+      color: #1d2a35;
+    }
+    .auth-container input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .auth-container button {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #1d79c2;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .auth-container button:hover {
+      background-color: #155a8a;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    // In-memory/localStorage data stores
+    let users = JSON.parse(localStorage.getItem('apUsers')) || [];
+    let customers = JSON.parse(localStorage.getItem('apCustomers')) || [];
+    let sales = JSON.parse(localStorage.getItem('apSales')) || [];
+    let purchases = JSON.parse(localStorage.getItem('apPurchases')) || [];
+    let currentUser = JSON.parse(localStorage.getItem('apCurrentUser')) || null;
+
+    // Helper to save data back to localStorage
+    function persist() {
+      localStorage.setItem('apUsers', JSON.stringify(users));
+      localStorage.setItem('apCustomers', JSON.stringify(customers));
+      localStorage.setItem('apSales', JSON.stringify(sales));
+      localStorage.setItem('apPurchases', JSON.stringify(purchases));
+      if (currentUser) {
+        localStorage.setItem('apCurrentUser', JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem('apCurrentUser');
+      }
+    }
+
+    // Basic hashing for password (not secure; for demo only)
+    function hashPassword(pwd) {
+      return btoa(pwd);
+    }
+
+    // Render login/register page
+    function renderAuthPage() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      const container = document.createElement('div');
+      container.className = 'auth-container';
+      container.innerHTML = `
+        <h2>Admin Panel Login</h2>
+        <input type="text" id="authUsername" placeholder="Username" required>
+        <input type="password" id="authPassword" placeholder="Password" required>
+        <button id="loginBtn">Log In</button>
+        <p style="margin-top:1rem; text-align:center;">Don't have an account? <a href="#" id="showRegister">Register</a></p>
+      `;
+      app.appendChild(container);
+      document.getElementById('loginBtn').addEventListener('click', () => {
+        const username = document.getElementById('authUsername').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const hashed = hashPassword(password);
+        const user = users.find(u => u.username === username && u.password === hashed);
+        if (user) {
+          currentUser = user;
+          persist();
+          renderAdminPanel('dashboard');
+        } else {
+          alert('Invalid credentials.');
+        }
+      });
+      document.getElementById('showRegister').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderRegisterPage();
+      });
+    }
+
+    function renderRegisterPage() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      const container = document.createElement('div');
+      container.className = 'auth-container';
+      container.innerHTML = `
+        <h2>Register</h2>
+        <input type="text" id="regUsername" placeholder="Username" required>
+        <input type="password" id="regPassword" placeholder="Password" required>
+        <button id="registerBtn">Create Account</button>
+        <p style="margin-top:1rem; text-align:center;">Already have an account? <a href="#" id="backToLogin">Log In</a></p>
+      `;
+      app.appendChild(container);
+      document.getElementById('registerBtn').addEventListener('click', () => {
+        const username = document.getElementById('regUsername').value.trim();
+        const password = document.getElementById('regPassword').value;
+        if (users.find(u => u.username === username)) {
+          alert('Username already exists.');
+          return;
+        }
+        const newUser = { username, password: hashPassword(password) };
+        users.push(newUser);
+        currentUser = newUser;
+        persist();
+        renderAdminPanel('dashboard');
+      });
+      document.getElementById('backToLogin').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderAuthPage();
+      });
+    }
+
+    // Render admin panel with sidebar and header
+    function renderAdminPanel(page) {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      // Create main layout container
+      const layout = document.createElement('div');
+      layout.className = 'layout';
+      // Sidebar
+      const sidebar = document.createElement('aside');
+      sidebar.className = 'sidebar';
+      sidebar.innerHTML = `
+        <ul>
+          <li><a href="#" data-page="dashboard" class="${page === 'dashboard' ? 'active' : ''}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+          <li><a href="#" data-page="users" class="${page === 'users' ? 'active' : ''}"><i class="fas fa-user"></i> Users</a></li>
+          <li><a href="#" data-page="customers" class="${page === 'customers' ? 'active' : ''}"><i class="fas fa-address-book"></i> Customers</a></li>
+          <li><a href="#" data-page="sales" class="${page === 'sales' ? 'active' : ''}"><i class="fas fa-shopping-cart"></i> Sales</a></li>
+          <li><a href="#" data-page="purchases" class="${page === 'purchases' ? 'active' : ''}"><i class="fas fa-credit-card"></i> Purchases</a></li>
+          <li><a href="#" data-page="reports" class="${page === 'reports' ? 'active' : ''}"><i class="fas fa-file-download"></i> Reports</a></li>
+          <li><a href="#" data-page="email" class="${page === 'email' ? 'active' : ''}"><i class="fas fa-envelope"></i> Send Mail</a></li>
+          <li><a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      `;
+      // Attach event handlers for sidebar links
+      sidebar.querySelectorAll('a[data-page]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const pageName = link.getAttribute('data-page');
+          renderAdminPanel(pageName);
+        });
+      });
+      sidebar.querySelector('#logoutLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        currentUser = null;
+        persist();
+        renderAuthPage();
+      });
+      layout.appendChild(sidebar);
+      // Content wrapper
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'content';
+      // Header
+      const header = document.createElement('header');
+      header.className = 'header';
+      // Capitalize page for header title
+      const title = page.charAt(0).toUpperCase() + page.slice(1);
+      header.innerHTML = `<h1>${title}</h1>`;
+      contentWrapper.appendChild(header);
+      // Page content
+      const main = document.createElement('div');
+      main.className = 'page-content';
+      switch (page) {
+        case 'dashboard':
+          main.appendChild(renderDashboard());
+          break;
+        case 'users':
+          main.appendChild(renderUsers());
+          break;
+        case 'customers':
+          main.appendChild(renderCustomers());
+          break;
+        case 'sales':
+          main.appendChild(renderSales());
+          break;
+        case 'purchases':
+          main.appendChild(renderPurchases());
+          break;
+        case 'reports':
+          main.appendChild(renderReports());
+          break;
+        case 'email':
+          main.appendChild(renderEmail());
+          break;
+        default:
+          main.textContent = '';
+      }
+      contentWrapper.appendChild(main);
+      layout.appendChild(contentWrapper);
+      app.appendChild(layout);
+    }
+
+    // Dashboard summary with metric cards
+    function renderDashboard() {
+      const section = document.createElement('section');
+      const welcome = document.createElement('p');
+      welcome.textContent = `Welcome, ${currentUser.username}! Here is an overview of your data:`;
+      section.appendChild(welcome);
+      const grid = document.createElement('div');
+      grid.className = 'card-grid';
+      const metrics = [
+        { icon: 'fas fa-user-friends', label: 'Users', value: users.length },
+        { icon: 'fas fa-address-card', label: 'Customers', value: customers.length },
+        { icon: 'fas fa-shopping-bag', label: 'Sales', value: sales.length },
+        { icon: 'fas fa-receipt', label: 'Purchases', value: purchases.length }
+      ];
+      metrics.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'metric-card';
+        card.innerHTML = `<i class="${m.icon}"></i><div class="metric-text"><span class="metric-value">${m.value}</span><span class="metric-label">${m.label}</span></div>`;
+        grid.appendChild(card);
+      });
+      section.appendChild(grid);
+      return section;
+    }
+
+    // Users management page
+    function renderUsers() {
+      const section = document.createElement('section');
+      section.innerHTML = '<h2>User Management</h2>';
+      // Table
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr><th>Username</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      function refresh() {
+        tbody.innerHTML = '';
+        users.forEach((user, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${user.username}</td>
+            <td class="actions">
+              <button onclick="deleteUser(${index})" title="Delete"><i class="fas fa-trash-alt"></i></button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+      refresh();
+      // Add user form
+      const form = document.createElement('div');
+      form.className = 'form-inline';
+      form.innerHTML = `
+        <input type="text" id="newUser" placeholder="New username" required>
+        <input type="password" id="newUserPwd" placeholder="Password" required>
+        <button id="addUserBtn">Add User</button>
+      `;
+      form.querySelector('#addUserBtn').addEventListener('click', () => {
+        const uname = form.querySelector('#newUser').value.trim();
+        const pwd = form.querySelector('#newUserPwd').value;
+        if (!uname || !pwd) return;
+        if (users.find(u => u.username === uname)) {
+          alert('Username already exists');
+          return;
+        }
+        users.push({ username: uname, password: hashPassword(pwd) });
+        persist();
+        form.querySelector('#newUser').value = '';
+        form.querySelector('#newUserPwd').value = '';
+        refresh();
+      });
+      section.appendChild(table);
+      section.appendChild(form);
+      // Expose delete function globally for inline handler
+      window.deleteUser = function(index) {
+        if (confirm('Delete user?')) {
+          users.splice(index, 1);
+          // If current user deleted themselves, log out
+          if (currentUser && currentUser.username === users[index]?.username) {
+            currentUser = null;
+          }
+          persist();
+          renderAdminPanel('users');
+        }
+      };
+      return section;
+    }
+
+    // Customers management page
+    function renderCustomers() {
+      const section = document.createElement('section');
+      section.innerHTML = '<h2>Customer Management</h2>';
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Phone</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      function refresh() {
+        tbody.innerHTML = '';
+        customers.forEach((cust, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${cust.name}</td>
+            <td>${cust.email}</td>
+            <td>${cust.phone}</td>
+            <td class="actions">
+              <button onclick="editCustomer(${index})" title="Edit"><i class="fas fa-edit"></i></button>
+              <button onclick="deleteCustomer(${index})" title="Delete"><i class="fas fa-trash-alt"></i></button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+      refresh();
+      // Form for adding/editing
+      let editingIndex = null;
+      const form = document.createElement('div');
+      form.className = 'form-inline';
+      form.innerHTML = `
+        <input type="text" id="custName" placeholder="Name" required>
+        <input type="email" id="custEmail" placeholder="Email" required>
+        <input type="text" id="custPhone" placeholder="Phone" required>
+        <button id="saveCustomer">Add</button>
+      `;
+      form.querySelector('#saveCustomer').addEventListener('click', () => {
+        const name = form.querySelector('#custName').value.trim();
+        const email = form.querySelector('#custEmail').value.trim();
+        const phone = form.querySelector('#custPhone').value.trim();
+        if (!name || !email || !phone) return;
+        if (editingIndex !== null) {
+          customers[editingIndex] = { name, email, phone };
+          editingIndex = null;
+          form.querySelector('#saveCustomer').textContent = 'Add';
+        } else {
+          customers.push({ name, email, phone });
+        }
+        form.querySelector('#custName').value = '';
+        form.querySelector('#custEmail').value = '';
+        form.querySelector('#custPhone').value = '';
+        persist();
+        refresh();
+      });
+      // Expose functions
+      window.editCustomer = function(index) {
+        const cust = customers[index];
+        form.querySelector('#custName').value = cust.name;
+        form.querySelector('#custEmail').value = cust.email;
+        form.querySelector('#custPhone').value = cust.phone;
+        editingIndex = index;
+        form.querySelector('#saveCustomer').textContent = 'Update';
+      };
+      window.deleteCustomer = function(index) {
+        if (confirm('Delete customer?')) {
+          customers.splice(index, 1);
+          persist();
+          refresh();
+        }
+      };
+      section.appendChild(table);
+      section.appendChild(form);
+      return section;
+    }
+
+    // Sales management page
+    function renderSales() {
+      const section = document.createElement('section');
+      section.innerHTML = '<h2>Sales</h2>';
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr><th>Customer</th><th>Description</th><th>Amount</th><th>Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      function refresh() {
+        tbody.innerHTML = '';
+        sales.forEach((sale, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${sale.customer}</td>
+            <td>${sale.description}</td>
+            <td>${sale.amount}</td>
+            <td>${sale.date}</td>
+            <td class="actions">
+              <button onclick="deleteSale(${index})" title="Delete"><i class="fas fa-trash-alt"></i></button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+      refresh();
+      // Form for adding sale
+      const form = document.createElement('div');
+      form.className = 'form-inline';
+      // Use customer names for select options
+      const custOptions = customers.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      form.innerHTML = `
+        <select id="saleCustomer">
+          <option value="">Customer</option>
+          ${custOptions}
+        </select>
+        <input type="text" id="saleDesc" placeholder="Description" required>
+        <input type="number" id="saleAmount" placeholder="Amount" min="0" required>
+        <button id="addSaleBtn">Add Sale</button>
+      `;
+      form.querySelector('#addSaleBtn').addEventListener('click', () => {
+        const customerName = form.querySelector('#saleCustomer').value;
+        const desc = form.querySelector('#saleDesc').value.trim();
+        const amount = form.querySelector('#saleAmount').value;
+        if (!customerName || !desc || !amount) return;
+        sales.push({ customer: customerName, description: desc, amount: parseFloat(amount), date: new Date().toLocaleDateString() });
+        persist();
+        form.querySelector('#saleDesc').value = '';
+        form.querySelector('#saleAmount').value = '';
+        refresh();
+      });
+      window.deleteSale = function(index) {
+        if (confirm('Delete sale record?')) {
+          sales.splice(index, 1);
+          persist();
+          refresh();
+        }
+      };
+      section.appendChild(table);
+      section.appendChild(form);
+      return section;
+    }
+
+    // Purchases management page (similar to sales)
+    function renderPurchases() {
+      const section = document.createElement('section');
+      section.innerHTML = '<h2>Purchases</h2>';
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr><th>Vendor</th><th>Description</th><th>Amount</th><th>Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      function refresh() {
+        tbody.innerHTML = '';
+        purchases.forEach((p, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${p.vendor}</td>
+            <td>${p.description}</td>
+            <td>${p.amount}</td>
+            <td>${p.date}</td>
+            <td class="actions">
+              <button onclick="deletePurchase(${index})" title="Delete"><i class="fas fa-trash-alt"></i></button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+      refresh();
+      // Form for adding purchase
+      const form = document.createElement('div');
+      form.className = 'form-inline';
+      form.innerHTML = `
+        <input type="text" id="purchaseVendor" placeholder="Vendor" required>
+        <input type="text" id="purchaseDesc" placeholder="Description" required>
+        <input type="number" id="purchaseAmount" placeholder="Amount" min="0" required>
+        <button id="addPurchaseBtn">Add Purchase</button>
+      `;
+      form.querySelector('#addPurchaseBtn').addEventListener('click', () => {
+        const vendor = form.querySelector('#purchaseVendor').value.trim();
+        const desc = form.querySelector('#purchaseDesc').value.trim();
+        const amount = form.querySelector('#purchaseAmount').value;
+        if (!vendor || !desc || !amount) return;
+        purchases.push({ vendor: vendor, description: desc, amount: parseFloat(amount), date: new Date().toLocaleDateString() });
+        persist();
+        form.querySelector('#purchaseVendor').value = '';
+        form.querySelector('#purchaseDesc').value = '';
+        form.querySelector('#purchaseAmount').value = '';
+        refresh();
+      });
+      window.deletePurchase = function(index) {
+        if (confirm('Delete purchase record?')) {
+          purchases.splice(index, 1);
+          persist();
+          refresh();
+        }
+      };
+      section.appendChild(table);
+      section.appendChild(form);
+      return section;
+    }
+
+    // Reports page
+    function renderReports() {
+      const section = document.createElement('section');
+      section.innerHTML = '<h2>Reports</h2><p>Download CSV reports of your data.</p>';
+      // Buttons for each report
+      const reportsList = document.createElement('div');
+      reportsList.innerHTML = `
+        <a href="#" class="report-btn" id="downloadCustomers">Customers CSV</a>
+        <a href="#" class="report-btn" id="downloadSales">Sales CSV</a>
+        <a href="#" class="report-btn" id="downloadPurchases">Purchases CSV</a>
+      `;
+      section.appendChild(reportsList);
+      function convertToCSV(arr) {
+        const keys = Object.keys(arr[0] || {});
+        const csv = [keys.join(',')];
+        arr.forEach(item => {
+          csv.push(keys.map(k => JSON.stringify(item[k] ?? '')).join(','));
+        });
+        return csv.join('\n');
+      }
+      function downloadCSV(filename, data) {
+        const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+      section.querySelector('#downloadCustomers').addEventListener('click', (e) => {
+        e.preventDefault();
+        downloadCSV('customers.csv', convertToCSV(customers));
+      });
+      section.querySelector('#downloadSales').addEventListener('click', (e) => {
+        e.preventDefault();
+        downloadCSV('sales.csv', convertToCSV(sales));
+      });
+      section.querySelector('#downloadPurchases').addEventListener('click', (e) => {
+        e.preventDefault();
+        downloadCSV('purchases.csv', convertToCSV(purchases));
+      });
+      return section;
+    }
+
+    // Send mail page
+    function renderEmail() {
+      const section = document.createElement('section');
+      section.innerHTML = '<h2>Send Email</h2><p>Use your default email client to send a quick message.</p>';
+      const form = document.createElement('div');
+      form.className = 'form-inline';
+      form.innerHTML = `
+        <input type="email" id="mailTo" placeholder="Recipient" required>
+        <input type="text" id="mailSubject" placeholder="Subject" required>
+        <input type="text" id="mailBody" placeholder="Body" required>
+        <button id="sendMailBtn">Send</button>
+      `;
+      form.querySelector('#sendMailBtn').addEventListener('click', () => {
+        const to = form.querySelector('#mailTo').value.trim();
+        const subject = encodeURIComponent(form.querySelector('#mailSubject').value.trim());
+        const body = encodeURIComponent(form.querySelector('#mailBody').value.trim());
+        if (!to || !subject) return;
+        window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+      });
+      section.appendChild(form);
+      return section;
+    }
+
+    // Initial rendering
+    if (currentUser) {
+      renderAdminPanel('dashboard');
+    } else {
+      renderAuthPage();
+    }
+  </script>
+</body>
+</html>

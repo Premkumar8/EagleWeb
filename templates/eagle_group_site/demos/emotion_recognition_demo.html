@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Emotion Recognition Demo</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pv5HBZ4GxtB2NZRk98cFQhY1r+MEZCkT+NHUlm4/s7EQo1gC9cQyv1HdVluukHWl7PzMuMbGDeP2/cJMh6y0gQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    #emoApp {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .auth-box {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+    }
+    .auth-box h2 { text-align: center; margin-top: 0; }
+    .auth-box input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .auth-box button {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #1d2a35;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .auth-box button:hover { background-color: #0f1b24; }
+    nav ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    nav ul li a {
+      text-decoration: none;
+      background-color: #e74c3c;
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+    }
+    nav ul li a.active { background-color: #1d2a35; }
+    #videoContainer {
+      display: none;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    #videoContainer video {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+    }
+    #emotionResult {
+      font-size: 1.25rem;
+      margin-top: 0.5rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="emoApp"></div>
+  <script>
+    // Data for emotion app
+    let erUsers = JSON.parse(localStorage.getItem('erUsers')) || [];
+    let erCurrentUser = JSON.parse(localStorage.getItem('erCurrentUser')) || null;
+    function erPersist() {
+      localStorage.setItem('erUsers', JSON.stringify(erUsers));
+      if (erCurrentUser) localStorage.setItem('erCurrentUser', JSON.stringify(erCurrentUser));
+      else localStorage.removeItem('erCurrentUser');
+    }
+    function hash(pwd) { return btoa(pwd); }
+    function renderAuth() {
+      const root = document.getElementById('emoApp');
+      root.innerHTML = '';
+      const box = document.createElement('div');
+      box.className = 'auth-box';
+      box.innerHTML = `
+        <h2>Emotion App Login</h2>
+        <input id="erUser" placeholder="Username" />
+        <input id="erPwd" type="password" placeholder="Password" />
+        <button id="erLogin">Log In</button>
+        <p style="margin-top:1rem;text-align:center;">New user? <a href="#" id="erRegLink">Register</a></p>
+      `;
+      root.appendChild(box);
+      document.getElementById('erLogin').addEventListener('click', () => {
+        const u = document.getElementById('erUser').value.trim();
+        const p = document.getElementById('erPwd').value;
+        const user = erUsers.find(v => v.username === u && v.password === hash(p));
+        if (user) {
+          erCurrentUser = user;
+          erPersist();
+          renderEmotionApp('dashboard');
+        } else {
+          alert('Invalid credentials');
+        }
+      });
+      document.getElementById('erRegLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderRegister();
+      });
+    }
+    function renderRegister() {
+      const root = document.getElementById('emoApp');
+      root.innerHTML = '';
+      const box = document.createElement('div');
+      box.className = 'auth-box';
+      box.innerHTML = `
+        <h2>Register</h2>
+        <input id="erRegUser" placeholder="Username" />
+        <input id="erRegPwd" type="password" placeholder="Password" />
+        <button id="erRegBtn">Create Account</button>
+        <p style="margin-top:1rem;text-align:center;">Back to <a href="#" id="erLoginLink">Log In</a></p>
+      `;
+      root.appendChild(box);
+      document.getElementById('erRegBtn').addEventListener('click', () => {
+        const u = document.getElementById('erRegUser').value.trim();
+        const p = document.getElementById('erRegPwd').value;
+        if (erUsers.find(v => v.username === u)) { alert('Username exists'); return; }
+        const newUser = { username: u, password: hash(p) };
+        erUsers.push(newUser);
+        erCurrentUser = newUser;
+        erPersist();
+        renderEmotionApp('dashboard');
+      });
+      document.getElementById('erLoginLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderAuth();
+      });
+    }
+    function renderEmotionApp(page) {
+      const root = document.getElementById('emoApp');
+      root.innerHTML = '';
+      // nav
+      const nav = document.createElement('nav');
+      nav.innerHTML = `
+        <ul>
+          <li><a href="#" data-page="dashboard" class="${page === 'dashboard' ? 'active' : ''}">Dashboard</a></li>
+          <li><a href="#" data-page="recognition" class="${page === 'recognition' ? 'active' : ''}">Emotion Detector</a></li>
+          <li><a href="../index.html#contact" target="_blank">Contact</a></li>
+          <li><a href="#" id="erLogout">Logout</a></li>
+        </ul>
+      `;
+      root.appendChild(nav);
+      nav.querySelectorAll('a[data-page]').forEach(a => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const dest = a.getAttribute('data-page');
+          renderEmotionApp(dest);
+        });
+      });
+      nav.querySelector('#erLogout').addEventListener('click', (e) => {
+        e.preventDefault();
+        erCurrentUser = null;
+        erPersist();
+        renderAuth();
+      });
+      // content
+      if (page === 'dashboard') {
+        const sec = document.createElement('section');
+        sec.innerHTML = `
+          <h2>Dashboard</h2>
+          <p>Welcome, ${erCurrentUser.username}!</p>
+          <p>Our emotion recognition solutions help organisations personalise user experiences and improve wellbeing.  Thousands of users are already benefiting from our technology.</p>
+          <ul>
+            <li><strong>Registered Users:</strong> ${erUsers.length}</li>
+            <li><strong>Happy Customers:</strong> 250+</li>
+            <li><strong>Emotions Recognised Today:</strong> ${Math.floor(Math.random() * 100)}</li>
+          </ul>
+        `;
+        root.appendChild(sec);
+      } else if (page === 'recognition') {
+        const sec = document.createElement('section');
+        sec.innerHTML = `<h2>Emotion Detector</h2><p>Click start to enable your webcam and see your current mood.</p>`;
+        const startBtn = document.createElement('button');
+        startBtn.textContent = 'Start';
+        startBtn.style.padding = '0.5rem 1rem';
+        startBtn.style.backgroundColor = '#1d2a35';
+        startBtn.style.color = '#fff';
+        startBtn.style.border = 'none';
+        startBtn.style.borderRadius = '4px';
+        startBtn.style.cursor = 'pointer';
+        sec.appendChild(startBtn);
+        const videoContainer = document.createElement('div');
+        videoContainer.id = 'videoContainer';
+        const video = document.createElement('video');
+        video.autoplay = true;
+        videoContainer.appendChild(video);
+        const result = document.createElement('div');
+        result.id = 'emotionResult';
+        videoContainer.appendChild(result);
+        sec.appendChild(videoContainer);
+        startBtn.addEventListener('click', async () => {
+          startBtn.disabled = true;
+          videoContainer.style.display = 'block';
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            // Simulate emotion detection: choose random emotion every 3 seconds
+            const emotions = ['Happy', 'Sad', 'Neutral', 'Excited', 'Calm'];
+            function updateEmotion() {
+              const emotion = emotions[Math.floor(Math.random() * emotions.length)];
+              result.textContent = 'Emotion: ' + emotion;
+            }
+            updateEmotion();
+            const interval = setInterval(updateEmotion, 3000);
+            // Stop detection when leaving page or logout
+            nav.querySelector('#erLogout').addEventListener('click', () => {
+              clearInterval(interval);
+              stream.getTracks().forEach(t => t.stop());
+            });
+          } catch (err) {
+            alert('Camera access was denied.');
+          }
+        });
+        root.appendChild(sec);
+      }
+    }
+    if (erCurrentUser) {
+      renderEmotionApp('dashboard');
+    } else {
+      renderAuth();
+    }
+  </script>
+</body>
+</html>
