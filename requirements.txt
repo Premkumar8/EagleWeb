@@ -6,3 +6,4 @@ flask
 Flask-SQLAlchemy
 Flask-Mail
 secret
+gunicorn
