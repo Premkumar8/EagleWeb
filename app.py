@@ -37,6 +37,10 @@ class Contact(db.Model):
     def __repr__(self):
         return f'<Contact {self.name}>'
 
+@app.route('/health')
+def health():
+    return 'OK', 200
+
 # --- ROUTES ---
 @app.route("/", methods=['GET', 'POST'])
 def index():
